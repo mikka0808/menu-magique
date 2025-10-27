@@ -20,6 +20,8 @@ Il n&apos;y a pas de serveur à lancer. Deux possibilités :
 - Planification d&apos;une semaine complète (midi/soir pour chaque jour).
 - Suggestions intégrées et possibilité d&apos;ajouter vos propres idées.
 - Feuille de suggestions en plein écran, adaptée au mode portrait sur iPhone.
+- Réorganisation intuitive des repas par glisser-déposer entre les jours et les services.
+- Fiches de suggestions détaillées (catégorie, description) et possibilité de les déposer directement sur le planning.
 - Sauvegarde automatique dans le navigateur, disponible hors connexion.
 - Export du planning au format texte (copie dans le presse-papiers ou affichage dans une fenêtre dédiée).
 
