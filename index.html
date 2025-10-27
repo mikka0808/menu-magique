@@ -85,8 +85,8 @@
             dans la bibliothèque.
           </li>
           <li>
-            Effectuez un appui long sur le bouton <strong>Appui long pour
-              déplacer</strong> pour réorganiser vos repas.
+            Maintenez l’icône à <strong>trois points verticaux</strong> pour
+            déplacer un repas, puis faites-le glisser vers un autre créneau.
           </li>
           <li>
             Le plan est sauvegardé automatiquement sur votre appareil. Vous
@@ -161,35 +161,39 @@
 
     <template id="meal-template">
       <article class="meal-card">
-        <div class="meal-header">
-          <h3 data-slot="meal-name"></h3>
-          <div class="meal-actions">
-            <button
-              type="button"
-              class="secondary-button btn-touch"
-              data-action="open-suggestions"
-            >
-              Suggestion
-            </button>
-            <button
-              type="button"
-              class="icon-button btn-touch"
-              data-action="clear-meal"
-              aria-label="Effacer"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-        <textarea rows="2" data-role="meal-input"></textarea>
         <button
           type="button"
-          class="drag-handle btn-touch"
+          class="drag-handle"
           data-role="drag-handle"
-          aria-label="Appui long pour déplacer ce repas"
+          aria-label="Déplacer ce repas"
+          title="Maintenez pour déplacer"
         >
-          ⠿ Appui long pour déplacer
+          <span class="drag-handle-icon" aria-hidden="true">⋮</span>
+          <span class="sr-only">Maintenez pour déplacer ce repas</span>
         </button>
+        <div class="meal-content">
+          <div class="meal-header">
+            <h3 data-slot="meal-name"></h3>
+            <div class="meal-actions">
+              <button
+                type="button"
+                class="secondary-button btn-touch"
+                data-action="open-suggestions"
+              >
+                Suggestion
+              </button>
+              <button
+                type="button"
+                class="icon-button btn-touch"
+                data-action="clear-meal"
+                aria-label="Effacer"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <textarea rows="2" data-role="meal-input"></textarea>
+        </div>
       </article>
     </template>
 

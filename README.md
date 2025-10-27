@@ -21,7 +21,7 @@ Il n&apos;y a pas de serveur à lancer. Deux possibilités :
 - Suggestions intégrées et possibilité d&apos;ajouter vos propres idées.
 - Feuille de suggestions en plein écran, adaptée au mode portrait sur iPhone.
 - Sauvegarde automatique dans le navigateur, disponible hors connexion.
-- Réorganisation rapide des repas par glisser-déposer (appui long sur mobile) avec de larges zones tactiles.
+- Réorganisation rapide des repas par glisser-déposer (appui long sur mobile) grâce à une poignée à trois points facile à viser.
 - Export du planning au format texte (copie dans le presse-papiers ou affichage dans une fenêtre dédiée).
 - Accès à des fiches recettes détaillées avec ajout des ingrédients à une liste de courses partagée.
 
@@ -29,5 +29,5 @@ Il n&apos;y a pas de serveur à lancer. Deux possibilités :
 
 - Ouvrez `index.html` dans Safari, appuyez sur le bouton de partage puis sur **Ajouter à l&apos;écran d&apos;accueil** pour profiter d&apos;une expérience plein écran.
 - Le mode sombre est automatiquement détecté et appliqué si votre iPhone est configuré en thème sombre.
-- Un appui long sur le bouton « Appui long pour déplacer » permet de réorganiser vos repas sans perdre la sélection en cours.
+- Maintenez l’icône à trois points verticaux pour déplacer un repas vers un autre créneau.
 - Le stockage local est propre à votre appareil ; les modifications ne sont pas synchronisées entre différents téléphones.
