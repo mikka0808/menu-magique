@@ -1,3 +1,5 @@
+import { RECIPE_DATA } from "./recipe-data.js";
+
 const days = [
   "Lundi",
   "Mardi",
@@ -24,28 +26,34 @@ const STORAGE_KEYS = {
 const CUSTOM_CATEGORY = "Perso";
 const CATEGORY_ALL_FILTER = "Tous";
 
-const defaultSuggestions = [
-  { label: "Salade César au poulet", category: "Rapide" },
-  { label: "Quiche aux poireaux", category: "Végétarien" },
-  { label: "Pâtes au pesto maison", category: "Végétarien" },
-  { label: "Curry de pois chiches", category: "Végétarien" },
-  { label: "Saumon teriyaki et riz", category: "Poisson" },
-  { label: "Pad thaï aux crevettes", category: "Poisson" },
-  { label: "Wok de légumes croquants", category: "Rapide" },
-  { label: "Poulet rôti et légumes racines", category: "Classique" },
-  { label: "Soupe thaï coco", category: "Réconfort" },
-  { label: "Buddha bowl quinoa & tofu", category: "Végétarien" },
-  { label: "Tacos au bœuf effiloché", category: "Convivial" },
-  { label: "Lasagnes aux légumes", category: "Famille" },
-  { label: "Boulettes suédoises et purée", category: "Famille" },
-  { label: "Poke bowl au thon", category: "Poisson" },
-  { label: "Risotto aux champignons", category: "Végétarien" },
-  { label: "Omelette aux herbes fraîches", category: "Rapide" },
-  { label: "Bœuf bourguignon express", category: "Réconfort" },
-  { label: "Chili sin carne", category: "Végétarien" },
-  { label: "Galettes de sarrasin complètes", category: "Classique" },
-  { label: "Poisson en papillote citronné", category: "Poisson" },
-];
+const catalogSuggestions = RECIPE_DATA.map((recipe) => {
+  const highlights = recipe.ingredients
+    .slice(0, 3)
+    .map((ingredient) => ingredient.item);
+  const searchTokens = [
+    recipe.title,
+    recipe.category,
+    ...recipe.ingredients.map((ingredient) => ingredient.item),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return {
+    id: recipe.id,
+    label: recipe.title,
+    category: recipe.category || "Facile & rapide",
+    prepTime: recipe.prepTime,
+    cookTime: recipe.cookTime,
+    calories: recipe.calories,
+    highlights,
+    searchTokens,
+  };
+}).sort((a, b) => a.label.localeCompare(b.label, "fr"));
+
+const catalogLookup = new Map(
+  catalogSuggestions.map((suggestion) => [suggestion.label, suggestion])
+);
 
 const plannerEl = document.getElementById("planner");
 const suggestionSheet = document.getElementById("suggestionSheet");
@@ -148,26 +156,30 @@ function saveRecipes() {
 }
 
 function getAllSuggestions() {
-  const merged = [...defaultSuggestions];
+  const merged = catalogSuggestions.map((suggestion) => ({ ...suggestion }));
   customRecipes.forEach((recipe) => {
     if (!merged.some((item) => item.label === recipe.label)) {
+      const category = recipe.category || CUSTOM_CATEGORY;
       merged.push({
+        id: null,
         label: recipe.label,
-        category: recipe.category || CUSTOM_CATEGORY,
+        category,
+        prepTime: null,
+        cookTime: null,
+        calories: null,
+        highlights: [],
+        searchTokens: `${recipe.label} ${category}`.toLowerCase(),
+        isCustom: true,
       });
     }
   });
-  return merged
-    .map((item) => ({
-      label: item.label,
-      category: item.category || CUSTOM_CATEGORY,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+
+  return merged.sort((a, b) => a.label.localeCompare(b.label, "fr"));
 }
 
 function getAvailableCategories() {
   const categories = new Set();
-  defaultSuggestions.forEach((item) => {
+  catalogSuggestions.forEach((item) => {
     if (item.category) {
       categories.add(item.category);
     }
@@ -468,21 +480,94 @@ function renderSuggestionGrid(filterText = "") {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
+
   suggestions.forEach((suggestion) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "suggestion-button";
-    const labelSpan = document.createElement("span");
-    labelSpan.className = "suggestion-label";
-    labelSpan.textContent = suggestion.label;
+    const card = document.createElement("article");
+    card.className = "suggestion-card";
+    card.dataset.category = suggestion.category || CUSTOM_CATEGORY;
+    if (suggestion.id) {
+      card.dataset.recipeId = suggestion.id;
+    }
+
+    const header = document.createElement("div");
+    header.className = "suggestion-card-header";
+
+    const title = document.createElement("h3");
+    title.className = "suggestion-card-title";
+    title.textContent = suggestion.label;
+
     const badge = document.createElement("span");
     badge.className = "suggestion-badge";
     badge.textContent = suggestion.category || CUSTOM_CATEGORY;
-    button.appendChild(labelSpan);
-    button.appendChild(badge);
-    button.addEventListener("click", () => applySuggestion(suggestion.label));
-    suggestionGrid.appendChild(button);
+
+    header.appendChild(title);
+    header.appendChild(badge);
+    card.appendChild(header);
+
+    const metaItems = [];
+    if (Number.isFinite(suggestion.prepTime)) {
+      metaItems.push({ icon: "🕑", label: "Préparation", value: `${suggestion.prepTime} min` });
+    }
+    if (Number.isFinite(suggestion.cookTime)) {
+      metaItems.push({ icon: "🍳", label: "Cuisson", value: `${suggestion.cookTime} min` });
+    }
+    if (Number.isFinite(suggestion.calories)) {
+      metaItems.push({ icon: "🔥", label: "Énergie", value: `${suggestion.calories} kcal` });
+    }
+
+    if (metaItems.length) {
+      const metaList = document.createElement("ul");
+      metaList.className = "suggestion-card-meta";
+      metaItems.forEach((item) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span aria-hidden="true">${item.icon}</span> <strong>${item.value}</strong>`;
+        li.setAttribute("aria-label", `${item.label} : ${item.value}`);
+        metaList.appendChild(li);
+      });
+      card.appendChild(metaList);
+    }
+
+    if (suggestion.highlights?.length) {
+      const highlightContainer = document.createElement("div");
+      highlightContainer.className = "suggestion-card-highlights";
+      suggestion.highlights.slice(0, 3).forEach((highlight) => {
+        const chip = document.createElement("span");
+        chip.className = "suggestion-highlight";
+        chip.textContent = highlight;
+        highlightContainer.appendChild(chip);
+      });
+      card.appendChild(highlightContainer);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "suggestion-card-actions";
+
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "suggestion-card-apply btn-touch";
+    addButton.textContent = "Ajouter au planning";
+    addButton.addEventListener("click", () => applySuggestion(suggestion.label));
+    actions.appendChild(addButton);
+
+    if (suggestion.id) {
+      const detailsLink = document.createElement("a");
+      detailsLink.href = `recettes.html#${suggestion.id}`;
+      detailsLink.className = "suggestion-card-link";
+      detailsLink.textContent = "Voir la fiche";
+      actions.appendChild(detailsLink);
+    } else {
+      const note = document.createElement("span");
+      note.className = "suggestion-card-note";
+      note.textContent = "Idée personnalisée";
+      actions.appendChild(note);
+    }
+
+    card.appendChild(actions);
+    fragment.appendChild(card);
   });
+
+  suggestionGrid.appendChild(fragment);
 }
 
 function handleSuggestionFilterClick(event) {
@@ -500,10 +585,10 @@ function handleSuggestionFilterClick(event) {
 
 function filterSuggestions(filterText = "") {
   const normalizedFilter = filterText.trim().toLowerCase();
-  return getAllSuggestions().filter(({ label, category }) => {
+  return getAllSuggestions().filter(({ category, searchTokens }) => {
     const matchesText =
       normalizedFilter.length === 0 ||
-      label.toLowerCase().includes(normalizedFilter);
+      (searchTokens || "").includes(normalizedFilter);
     const normalizedCategory = category || CUSTOM_CATEGORY;
     const matchesCategory =
       activeSuggestionCategory === CATEGORY_ALL_FILTER ||
@@ -596,7 +681,7 @@ function handleRecipeSubmit(event) {
 
   const category =
     selectedCategory ||
-    defaultSuggestions.find((item) => item.label === value)?.category ||
+    catalogLookup.get(value)?.category ||
     CUSTOM_CATEGORY;
 
   customRecipes.push({ label: value, category });
@@ -618,11 +703,49 @@ function handleRecipeSubmit(event) {
 function renderRecipeTags() {
   recipeTags.innerHTML = "";
   const suggestions = getAllSuggestions();
+  if (!suggestions.length) {
+    return;
+  }
 
-  suggestions.slice(0, 30).forEach((suggestion) => {
-    const tag = document.createElement("span");
+  const catalogOnly = suggestions.filter((item) => item.id);
+  const customOnly = suggestions.filter((item) => item.isCustom);
+
+  const selected = [];
+  const maxCatalog = Math.min(24, catalogOnly.length);
+  const maxCustom = Math.min(6, customOnly.length);
+
+  const pickRandomItems = (pool, count) => {
+    if (!count) return [];
+    const result = [];
+    const used = new Set();
+    while (result.length < count && used.size < pool.length) {
+      const index = Math.floor(Math.random() * pool.length);
+      if (used.has(index)) {
+        continue;
+      }
+      used.add(index);
+      result.push(pool[index]);
+    }
+    return result;
+  };
+
+  selected.push(...pickRandomItems(catalogOnly, maxCatalog));
+  selected.push(...pickRandomItems(customOnly, maxCustom));
+
+  selected.forEach((suggestion) => {
+    const elementTag = suggestion.id ? "a" : "span";
+    const tag = document.createElement(elementTag);
     tag.className = "recipe-tag";
+    if (suggestion.id) {
+      tag.classList.add("recipe-tag--link");
+      tag.href = `recettes.html#${suggestion.id}`;
+    }
     tag.textContent = suggestion.label;
+    if (suggestion.highlights?.length) {
+      tag.title = `Ingrédients clés : ${suggestion.highlights
+        .slice(0, 3)
+        .join(", ")}`;
+    }
     recipeTags.appendChild(tag);
   });
 }

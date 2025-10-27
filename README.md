@@ -18,12 +18,12 @@ Il n&apos;y a pas de serveur à lancer. Deux possibilités :
 ## Fonctionnalités
 
 - Planification d&apos;une semaine complète (midi/soir pour chaque jour).
-- Suggestions intégrées et possibilité d&apos;ajouter vos propres idées.
+- Suggestions intégrées synchronisées avec plus de 1000 recettes faciles & rapides, et possibilité d&apos;ajouter vos propres idées.
 - Feuille de suggestions en plein écran, adaptée au mode portrait sur iPhone.
 - Sauvegarde automatique dans le navigateur, disponible hors connexion.
 - Réorganisation rapide des repas par glisser-déposer (appui long sur mobile) grâce à une poignée à trois points facile à viser.
 - Export du planning au format texte (copie dans le presse-papiers ou affichage dans une fenêtre dédiée).
-- Accès à des fiches recettes détaillées avec ajout des ingrédients à une liste de courses partagée.
+- Accès à des fiches recettes détaillées avec ajout des ingrédients à une liste de courses partagée et liens directs depuis les suggestions.
 
 ## Astuces pour iOS
 
