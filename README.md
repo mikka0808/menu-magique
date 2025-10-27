@@ -1,29 +1,32 @@
 # Menu Magique
 
-Planificateur hebdomadaire de repas en React conçu pour une expérience mobile fluide. L'interface est pensée pour fonctionner directement sur iOS avec de larges zones tactiles et le support du glisser-déposer longue pression.
+Application web légère pour planifier les repas de la semaine (midi et soir) et l&apos;utiliser directement sur Safari pour iPhone. Tout fonctionne hors connexion : une fois la page ouverte, les données sont sauvegardées dans le navigateur grâce au stockage local.
 
 ## Démarrage
 
-```bash
-npm install
-npm run dev
-```
+Il n&apos;y a pas de serveur à lancer. Deux possibilités :
 
-Le serveur de développement démarre sur [http://localhost:5173](http://localhost:5173). Pour construire la version de production :
+1. **Utilisation directe** : ouvrez simplement `index.html` dans Safari (ou un autre navigateur moderne) sur votre Mac, puis ajoutez la page à l&apos;écran d&apos;accueil de votre iPhone.
+2. **Via un petit serveur statique** (optionnel pour les tests sur ordinateur) :
 
-```bash
-npm run build
-```
+   ```bash
+   npx serve .
+   ```
+
+   Ensuite, ouvrez [http://localhost:3000](http://localhost:3000) et testez l&apos;application.
 
 ## Fonctionnalités
 
-- Planning hebdomadaire complet (midi/soir pour chaque jour).
-- Bibliothèque de suggestions prêtes à être glissées dans le planning.
-- Optimisations mobiles : grands boutons, zones tactiles généreuses et activation par appui long.
-- Détection iOS pour adapter l'expérience à Safari mobile.
+- Planification d&apos;une semaine complète (midi/soir pour chaque jour).
+- Suggestions intégrées et possibilité d&apos;ajouter vos propres idées.
+- Feuille de suggestions en plein écran, adaptée au mode portrait sur iPhone.
+- Sauvegarde automatique dans le navigateur, disponible hors connexion.
+- Réorganisation rapide des repas par glisser-déposer (appui long sur mobile) avec de larges zones tactiles.
+- Export du planning au format texte (copie dans le presse-papiers ou affichage dans une fenêtre dédiée).
 
-## Astuces iOS
+## Astuces pour iOS
 
-- Ajoutez l'application à l'écran d'accueil via Safari pour profiter du mode plein écran.
-- Le `body` s'adapte automatiquement avec les insets sécurisés (`safe-area`).
-- Le glisser-déposer nécessite un appui long, idéal pour éviter les déclenchements involontaires sur mobile.
+- Ouvrez `index.html` dans Safari, appuyez sur le bouton de partage puis sur **Ajouter à l&apos;écran d&apos;accueil** pour profiter d&apos;une expérience plein écran.
+- Le mode sombre est automatiquement détecté et appliqué si votre iPhone est configuré en thème sombre.
+- Un appui long sur le bouton « Appui long pour déplacer » permet de réorganiser vos repas sans perdre la sélection en cours.
+- Le stockage local est propre à votre appareil ; les modifications ne sont pas synchronisées entre différents téléphones.
