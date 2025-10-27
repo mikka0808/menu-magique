@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Menu Magique</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Menu Magique</h1>
+      <p class="tagline">
+        Organisez vos repas de la semaine, midi et soir, directement depuis votre
+        iPhone.
+      </p>
+      <div class="quick-actions">
+        <button id="generateWeek" type="button" class="primary-button">
+          Générer une semaine
+        </button>
+        <button id="exportPlan" type="button" class="secondary-button">
+          Exporter la semaine
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="planner" id="planner" aria-live="polite"></section>
+
+      <section class="library">
+        <h2>Bibliothèque de recettes</h2>
+        <p class="section-description">
+          Ajoutez vos idées de repas pour les réutiliser facilement. Elles
+          s&apos;ajoutent aux suggestions déjà présentes dans l&apos;application.
+        </p>
+        <form id="addRecipeForm" autocomplete="off">
+          <label class="field-label" for="recipeInput">Nouvelle idée de repas</label>
+          <div class="field-row">
+            <input
+              id="recipeInput"
+              name="recipe"
+              type="text"
+              required
+              maxlength="80"
+              placeholder="Ex. Buddha bowl au saumon"
+            />
+            <button type="submit" class="primary-button">Ajouter</button>
+          </div>
+        </form>
+
+        <div class="recipe-tags" id="recipeTags" aria-live="polite"></div>
+      </section>
+
+      <section class="tips">
+        <h2>Conseils d&apos;utilisation</h2>
+        <ul>
+          <li>Tapez directement dans les cases pour saisir vos repas.</li>
+          <li>
+            Glissez-déposez un repas sur un autre jour pour le déplacer ou
+            l&apos;échanger rapidement.
+          </li>
+          <li>
+            Utilisez le bouton <strong>Suggestion</strong> pour choisir une idée
+            dans la bibliothèque.
+          </li>
+          <li>
+            Le plan est sauvegardé automatiquement sur votre appareil. Vous
+            pouvez donc l&apos;utiliser hors connexion.
+          </li>
+          <li>
+            Ajoutez cette page à votre écran d&apos;accueil pour une expérience plus
+            proche d&apos;une application.
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <div class="sheet hidden" id="suggestionSheet" aria-hidden="true">
+      <div class="sheet-content" role="dialog" aria-modal="true" aria-label="Suggestions de repas">
+        <header class="sheet-header">
+          <h2>Suggestions de repas</h2>
+          <button type="button" class="icon-button" data-action="close-sheet" aria-label="Fermer">
+            ✕
+          </button>
+        </header>
+        <div class="sheet-body">
+          <input
+            type="search"
+            id="suggestionSearch"
+            placeholder="Rechercher une idée"
+            aria-label="Rechercher dans les suggestions"
+          />
+          <div class="suggestion-grid" id="suggestionGrid"></div>
+          <div class="sheet-actions">
+            <button type="button" class="secondary-button" data-action="random-suggestion">
+              Idée aléatoire
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <template id="day-template">
+      <section class="day-card">
+        <header class="day-header">
+          <h2 data-slot="day-name"></h2>
+          <button type="button" class="secondary-button" data-action="clear-day">
+            Effacer la journée
+          </button>
+        </header>
+        <div class="meals"></div>
+      </section>
+    </template>
+
+    <template id="meal-template">
+      <article class="meal-card">
+        <div class="meal-header">
+          <h3 data-slot="meal-name"></h3>
+          <div class="meal-actions">
+            <button type="button" class="secondary-button" data-action="open-suggestions">
+              Suggestion
+            </button>
+            <button type="button" class="icon-button" data-action="clear-meal" aria-label="Effacer">
+              ✕
+            </button>
+          </div>
+        </div>
+        <textarea rows="2" data-role="meal-input"></textarea>
+      </article>
+    </template>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
