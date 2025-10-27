@@ -60,6 +60,17 @@
               Ajouter
             </button>
           </div>
+          <label class="field-label optional" for="recipeCategory"
+            >Type de recette (optionnel)</label
+          >
+          <select
+            id="recipeCategory"
+            name="category"
+            class="select-field"
+            aria-label="Choisir un type de recette"
+          >
+            <option value="">Chargement des types...</option>
+          </select>
         </form>
 
         <div class="recipe-tags" id="recipeTags" aria-live="polite"></div>
@@ -109,6 +120,13 @@
             placeholder="Rechercher une idée"
             aria-label="Rechercher dans les suggestions"
           />
+          <div
+            class="suggestion-filters"
+            id="suggestionFilters"
+            role="tablist"
+            aria-label="Filtrer les suggestions par type"
+            aria-orientation="horizontal"
+          ></div>
           <div class="suggestion-grid" id="suggestionGrid"></div>
           <div class="sheet-actions">
             <button

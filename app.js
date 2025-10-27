@@ -21,6 +21,9 @@ const STORAGE_KEYS = {
   recipes: "menu-magique-recipes",
 };
 
+const CUSTOM_CATEGORY = "Perso";
+const CATEGORY_ALL_FILTER = "Tous";
+
 const defaultSuggestions = [
   { label: "Salade César au poulet", category: "Rapide" },
   { label: "Quiche aux poireaux", category: "Végétarien" },
@@ -48,12 +51,15 @@ const plannerEl = document.getElementById("planner");
 const suggestionSheet = document.getElementById("suggestionSheet");
 const suggestionGrid = document.getElementById("suggestionGrid");
 const suggestionSearch = document.getElementById("suggestionSearch");
+const suggestionFilters = document.getElementById("suggestionFilters");
+const recipeCategorySelect = document.getElementById("recipeCategory");
 const toastEl = document.getElementById("toast");
 const recipeTags = document.getElementById("recipeTags");
 
 let planState = loadPlan();
 let customRecipes = loadRecipes();
 let activeSlot = null;
+let activeSuggestionCategory = CATEGORY_ALL_FILTER;
 let dragState = null;
 let dragTimer = null;
 
@@ -85,7 +91,19 @@ function loadRecipes() {
       return [];
     }
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((item) => item && typeof item.label === "string")
+      .map((item) => ({
+        label: item.label,
+        category:
+          typeof item.category === "string" && item.category.trim()
+            ? item.category.trim()
+            : CUSTOM_CATEGORY,
+      }));
   } catch (error) {
     console.warn("Impossible de charger les recettes", error);
     return [];
@@ -133,10 +151,98 @@ function getAllSuggestions() {
   const merged = [...defaultSuggestions];
   customRecipes.forEach((recipe) => {
     if (!merged.some((item) => item.label === recipe.label)) {
-      merged.push(recipe);
+      merged.push({
+        label: recipe.label,
+        category: recipe.category || CUSTOM_CATEGORY,
+      });
     }
   });
-  return merged.sort((a, b) => a.label.localeCompare(b.label));
+  return merged
+    .map((item) => ({
+      label: item.label,
+      category: item.category || CUSTOM_CATEGORY,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+}
+
+function getAvailableCategories() {
+  const categories = new Set();
+  defaultSuggestions.forEach((item) => {
+    if (item.category) {
+      categories.add(item.category);
+    }
+  });
+  customRecipes.forEach((item) => {
+    if (item.category) {
+      categories.add(item.category);
+    }
+  });
+  categories.add(CUSTOM_CATEGORY);
+
+  return Array.from(categories).sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+function renderSuggestionFilters() {
+  if (!suggestionFilters) return;
+  const categories = [CATEGORY_ALL_FILTER, ...getAvailableCategories()];
+  if (!categories.includes(activeSuggestionCategory)) {
+    activeSuggestionCategory = CATEGORY_ALL_FILTER;
+  }
+  suggestionFilters.innerHTML = "";
+  suggestionFilters.scrollTo({ left: 0, behavior: "auto" });
+
+  categories.forEach((category) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "suggestion-filter btn-touch";
+    button.dataset.categoryFilter = category;
+    button.textContent = category;
+    button.setAttribute(
+      "aria-selected",
+      category === activeSuggestionCategory ? "true" : "false"
+    );
+    button.setAttribute("role", "tab");
+    button.setAttribute(
+      "tabindex",
+      category === activeSuggestionCategory ? "0" : "-1"
+    );
+    suggestionFilters.appendChild(button);
+  });
+}
+
+function updateActiveSuggestionFilter() {
+  if (!suggestionFilters) return;
+  suggestionFilters
+    .querySelectorAll("[data-category-filter]")
+    .forEach((button) => {
+      const isActive =
+        button.dataset.categoryFilter === activeSuggestionCategory;
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+      button.setAttribute("tabindex", isActive ? "0" : "-1");
+    });
+}
+
+function populateCategorySelect() {
+  if (!recipeCategorySelect) return;
+  const categories = getAvailableCategories();
+  const previousValue = recipeCategorySelect.value;
+  recipeCategorySelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choisir un type (facultatif)";
+  recipeCategorySelect.appendChild(placeholder);
+
+  categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    recipeCategorySelect.appendChild(option);
+  });
+
+  if (categories.includes(previousValue)) {
+    recipeCategorySelect.value = previousValue;
+  }
 }
 
 function renderPlanner() {
@@ -334,6 +440,10 @@ function openSuggestionSheet(day, slotKey) {
   suggestionSheet.classList.remove("hidden");
   suggestionSheet.setAttribute("aria-hidden", "false");
   suggestionSearch.value = "";
+  activeSuggestionCategory = CATEGORY_ALL_FILTER;
+  renderSuggestionFilters();
+  updateActiveSuggestionFilter();
+  populateCategorySelect();
   renderSuggestionGrid();
   suggestionSearch.focus({ preventScroll: false });
 }
@@ -345,9 +455,8 @@ function closeSuggestionSheet() {
 }
 
 function renderSuggestionGrid(filterText = "") {
-  const suggestions = getAllSuggestions().filter(({ label }) =>
-    label.toLowerCase().includes(filterText.toLowerCase())
-  );
+  if (!suggestionGrid) return;
+  const suggestions = filterSuggestions(filterText);
 
   suggestionGrid.innerHTML = "";
 
@@ -363,9 +472,43 @@ function renderSuggestionGrid(filterText = "") {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "suggestion-button";
-    button.innerHTML = `${suggestion.label} <span>${suggestion.category || "Perso"}</span>`;
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "suggestion-label";
+    labelSpan.textContent = suggestion.label;
+    const badge = document.createElement("span");
+    badge.className = "suggestion-badge";
+    badge.textContent = suggestion.category || CUSTOM_CATEGORY;
+    button.appendChild(labelSpan);
+    button.appendChild(badge);
     button.addEventListener("click", () => applySuggestion(suggestion.label));
     suggestionGrid.appendChild(button);
+  });
+}
+
+function handleSuggestionFilterClick(event) {
+  const button = event.target.closest("[data-category-filter]");
+  if (!button) return;
+  const { categoryFilter } = button.dataset;
+  if (!categoryFilter || categoryFilter === activeSuggestionCategory) {
+    return;
+  }
+  activeSuggestionCategory = categoryFilter;
+  updateActiveSuggestionFilter();
+  button.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  renderSuggestionGrid(suggestionSearch.value);
+}
+
+function filterSuggestions(filterText = "") {
+  const normalizedFilter = filterText.trim().toLowerCase();
+  return getAllSuggestions().filter(({ label, category }) => {
+    const matchesText =
+      normalizedFilter.length === 0 ||
+      label.toLowerCase().includes(normalizedFilter);
+    const normalizedCategory = category || CUSTOM_CATEGORY;
+    const matchesCategory =
+      activeSuggestionCategory === CATEGORY_ALL_FILTER ||
+      normalizedCategory === activeSuggestionCategory;
+    return matchesText && matchesCategory;
   });
 }
 
@@ -436,6 +579,7 @@ function showToast(message) {
 function handleRecipeSubmit(event) {
   event.preventDefault();
   const input = event.target.elements.recipe;
+  const categoryField = event.target.elements.category;
   const value = input.value.trim();
   if (!value) return;
 
@@ -445,11 +589,30 @@ function handleRecipeSubmit(event) {
     return;
   }
 
-  customRecipes.push({ label: value, category: "Perso" });
+  const selectedCategory =
+    typeof categoryField?.value === "string"
+      ? categoryField.value.trim()
+      : "";
+
+  const category =
+    selectedCategory ||
+    defaultSuggestions.find((item) => item.label === value)?.category ||
+    CUSTOM_CATEGORY;
+
+  customRecipes.push({ label: value, category });
   saveRecipes();
   renderRecipeTags();
+  populateCategorySelect();
+  if (!suggestionSheet.classList.contains("hidden")) {
+    renderSuggestionFilters();
+    updateActiveSuggestionFilter();
+    renderSuggestionGrid(suggestionSearch.value);
+  }
   showToast("Idée ajoutée à la bibliothèque !");
   input.value = "";
+  if (categoryField) {
+    categoryField.value = "";
+  }
 }
 
 function renderRecipeTags() {
@@ -677,12 +840,16 @@ function registerEvents() {
   suggestionSheet
     .querySelector('[data-action="random-suggestion"]')
     .addEventListener("click", () => {
-      const suggestions = getAllSuggestions();
+      const suggestions = filterSuggestions(suggestionSearch.value);
       if (suggestions.length === 0) return;
       const random =
         suggestions[Math.floor(Math.random() * suggestions.length)].label;
       applySuggestion(random);
     });
+
+  if (suggestionFilters) {
+    suggestionFilters.addEventListener("click", handleSuggestionFilterClick);
+  }
 
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -697,6 +864,7 @@ function init() {
   applyIOSBodyClasses();
   renderPlanner();
   renderRecipeTags();
+  populateCategorySelect();
   registerEvents();
 }
 
