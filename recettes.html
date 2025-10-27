@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Recettes - Menu Magique</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Recettes détaillées</h1>
+      <p class="tagline">
+        Découvrez le déroulé complet de chaque recette et ajoutez les
+        ingrédients à votre liste de courses en un geste.
+      </p>
+      <div class="quick-actions">
+        <a href="index.html" class="secondary-button btn-touch">
+          Retourner au planning
+        </a>
+      </div>
+    </header>
+
+    <main class="recipes-page">
+      <section aria-labelledby="recipesTitle" class="recipes-list" id="recipeList">
+        <h2 id="recipesTitle" class="sr-only">Liste des recettes</h2>
+      </section>
+
+      <section class="shopping-list" aria-labelledby="shoppingTitle">
+        <h2 id="shoppingTitle">Liste de courses</h2>
+        <p class="section-description">
+          Sélectionnez une ou plusieurs recettes pour rassembler les
+          ingrédients nécessaires. Modifiez ensuite la liste selon vos
+          envies.
+        </p>
+        <div class="shopping-list-panel">
+          <ul class="shopping-list-items" id="shoppingList" hidden></ul>
+          <p class="empty-state" id="shoppingListEmpty">
+            Votre liste est vide pour le moment.
+          </p>
+          <div class="shopping-actions">
+            <button type="button" class="secondary-button btn-touch" id="clearShoppingList">
+              Vider la liste
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="recipeToast" role="status" aria-live="polite"></div>
+
+    <script src="recipes.js" defer></script>
+  </body>
+</html>

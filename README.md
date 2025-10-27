@@ -23,6 +23,7 @@ Il n&apos;y a pas de serveur à lancer. Deux possibilités :
 - Sauvegarde automatique dans le navigateur, disponible hors connexion.
 - Réorganisation rapide des repas par glisser-déposer (appui long sur mobile) avec de larges zones tactiles.
 - Export du planning au format texte (copie dans le presse-papiers ou affichage dans une fenêtre dédiée).
+- Accès à des fiches recettes détaillées avec ajout des ingrédients à une liste de courses partagée.
 
 ## Astuces pour iOS
 
