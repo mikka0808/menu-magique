@@ -23,6 +23,29 @@
     </header>
 
     <main class="recipes-page">
+      <section class="recipe-search" aria-labelledby="recipeSearchLabel">
+        <label for="recipeSearch" id="recipeSearchLabel">
+          Rechercher une recette ou un ingrédient
+        </label>
+        <div class="recipe-search-control">
+          <input
+            type="search"
+            id="recipeSearch"
+            name="recipeSearch"
+            placeholder="Tapez \"poulet\", \"salade\", \"curry\"..."
+            autocomplete="off"
+            inputmode="search"
+          />
+          <button type="button" class="secondary-button btn-touch" id="recipeSearchClear">
+            Effacer
+          </button>
+        </div>
+        <p class="recipe-search-hint">
+          Les résultats correspondent immédiatement aux fiches détaillées ci-dessous.
+        </p>
+        <p class="recipe-search-count" id="recipeSearchCount" aria-live="polite"></p>
+      </section>
+
       <section aria-labelledby="recipesTitle" class="recipes-list" id="recipeList">
         <h2 id="recipesTitle" class="sr-only">Liste des recettes</h2>
       </section>

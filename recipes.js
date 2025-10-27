@@ -1,13 +1,16 @@
-import { RECIPE_DATA } from "./recipe-data.js";
+import { getSortedRecipes, filterRecipesByQuery } from "./recipe-utils.js";
 
 const SHOPPING_LIST_KEY = "menu-magique-shopping-list";
 const CHUNK_SIZE = 28;
 
-const RECIPES = RECIPE_DATA.slice().sort((a, b) =>
-  a.title.localeCompare(b.title, "fr")
-);
+const ALL_RECIPES = getSortedRecipes();
+let visibleRecipes = ALL_RECIPES;
+let activeRecipeQuery = "";
 
 const recipeListEl = document.getElementById("recipeList");
+const recipeSearchInput = document.getElementById("recipeSearch");
+const recipeSearchClear = document.getElementById("recipeSearchClear");
+const recipeSearchCount = document.getElementById("recipeSearchCount");
 const shoppingListEl = document.getElementById("shoppingList");
 const shoppingListEmptyEl = document.getElementById("shoppingListEmpty");
 const clearShoppingListButton = document.getElementById("clearShoppingList");
@@ -34,8 +37,40 @@ if (clearShoppingListButton) {
   });
 }
 
+if (recipeSearchInput) {
+  recipeSearchInput.addEventListener("input", (event) => {
+    applyRecipeSearch(event.target.value);
+  });
+}
+
+if (recipeSearchClear) {
+  recipeSearchClear.addEventListener("click", () => {
+    if (!recipeSearchInput) {
+      return;
+    }
+    if (recipeSearchInput.value === "") {
+      recipeSearchInput.focus();
+      return;
+    }
+    recipeSearchInput.value = "";
+    applyRecipeSearch("");
+    recipeSearchInput.focus();
+  });
+}
+
 window.addEventListener("hashchange", () => {
   pendingHash = window.location.hash.replace(/^#/, "");
+  if (
+    pendingHash &&
+    activeRecipeQuery.trim() &&
+    !visibleRecipes.some((recipe) => recipe.id === pendingHash)
+  ) {
+    if (recipeSearchInput) {
+      recipeSearchInput.value = "";
+    }
+    applyRecipeSearch("");
+    return;
+  }
   revealHashTarget();
 });
 
@@ -44,16 +79,60 @@ function renderRecipes() {
     return;
   }
 
+  const list = visibleRecipes;
   recipeListEl.innerHTML = "";
 
   const summary = document.createElement("div");
   summary.className = "recipe-summary";
-  summary.innerHTML = `
-    <span aria-hidden="true">🍽️</span>
-    <strong>${RECIPES.length}</strong> recettes faciles et rapides vous attendent.
-    Parcourez-les ou ajoutez leurs ingrédients à votre liste en un clic.
-  `;
+  const icon = document.createElement("span");
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "🍽️";
+  summary.appendChild(icon);
+
+  const summaryText = document.createElement("div");
+  summaryText.className = "recipe-summary-text";
+
+  const summaryLine = document.createElement("p");
+  summaryLine.className = "recipe-summary-line";
+  const countElement = document.createElement("strong");
+  countElement.textContent = `${list.length}`;
+  summaryLine.appendChild(countElement);
+
+  if (activeRecipeQuery.trim()) {
+    const plural = list.length > 1 ? "recettes" : "recette";
+    summaryLine.appendChild(
+      document.createTextNode(` ${plural} trouvée${list.length > 1 ? "s" : ""} pour `)
+    );
+    const highlight = document.createElement("mark");
+    highlight.textContent = activeRecipeQuery.trim();
+    summaryLine.appendChild(highlight);
+    summaryLine.appendChild(document.createTextNode("."));
+  } else {
+    summaryLine.appendChild(
+      document.createTextNode(" recettes faciles et rapides vous attendent.")
+    );
+  }
+
+  summaryText.appendChild(summaryLine);
+
+  const summaryHelp = document.createElement("p");
+  summaryHelp.className = "recipe-summary-subline";
+  summaryHelp.textContent =
+    "Parcourez-les ou ajoutez leurs ingrédients à votre liste en un clic.";
+  summaryText.appendChild(summaryHelp);
+
+  summary.appendChild(summaryText);
   recipeListEl.appendChild(summary);
+
+  if (!list.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent =
+      "Aucune recette ne correspond à votre recherche pour le moment.";
+    recipeListEl.appendChild(empty);
+    updateRecipeSearchCount();
+    return;
+  }
 
   const container = document.createElement("div");
   container.className = "recipe-card-list";
@@ -63,13 +142,13 @@ function renderRecipes() {
 
   const renderChunk = () => {
     const fragment = document.createDocumentFragment();
-    for (let count = 0; count < CHUNK_SIZE && index < RECIPES.length; count += 1) {
-      fragment.appendChild(createRecipeCard(RECIPES[index]));
+    for (let count = 0; count < CHUNK_SIZE && index < list.length; count += 1) {
+      fragment.appendChild(createRecipeCard(list[index]));
       index += 1;
     }
     container.appendChild(fragment);
     revealHashTarget();
-    if (index < RECIPES.length) {
+    if (index < list.length) {
       scheduleNextChunk();
     }
   };
@@ -83,6 +162,50 @@ function renderRecipes() {
   };
 
   scheduleNextChunk();
+  updateRecipeSearchCount();
+}
+
+function applyRecipeSearch(value) {
+  const nextQuery = (value || "").toString();
+  if (nextQuery === activeRecipeQuery) {
+    return;
+  }
+  activeRecipeQuery = nextQuery;
+  visibleRecipes = filterRecipesByQuery(activeRecipeQuery);
+  renderRecipes();
+}
+
+function updateRecipeSearchCount() {
+  if (!recipeSearchCount) {
+    return;
+  }
+
+  const query = activeRecipeQuery.trim();
+  const count = visibleRecipes.length;
+  if (count === 0) {
+    recipeSearchCount.textContent = query
+      ? "Aucune recette pour « " + query + " » pour l'instant."
+      : "Aucune recette disponible pour le moment.";
+    return;
+  }
+
+  const plural = count > 1 ? "recettes" : "recette";
+  if (query) {
+    const suffix = count > 1 ? "s" : "";
+    recipeSearchCount.textContent =
+      count +
+      " " +
+      plural +
+      " trouvée" +
+      suffix +
+      " pour « " +
+      query +
+      " ».";
+  } else {
+    const suffix = count > 1 ? "s" : "";
+    recipeSearchCount.textContent =
+      count + " " + plural + " affichée" + suffix + ".";
+  }
 }
 
 function createRecipeCard(recipe) {

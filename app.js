@@ -1,4 +1,4 @@
-import { RECIPE_DATA } from "./recipe-data.js";
+import { getRecipeSuggestions, filterRecipesByQuery } from "./recipe-utils.js";
 
 const days = [
   "Lundi",
@@ -26,30 +26,7 @@ const STORAGE_KEYS = {
 const CUSTOM_CATEGORY = "Perso";
 const CATEGORY_ALL_FILTER = "Tous";
 
-const catalogSuggestions = RECIPE_DATA.map((recipe) => {
-  const highlights = recipe.ingredients
-    .slice(0, 3)
-    .map((ingredient) => ingredient.item);
-  const searchTokens = [
-    recipe.title,
-    recipe.category,
-    ...recipe.ingredients.map((ingredient) => ingredient.item),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  return {
-    id: recipe.id,
-    label: recipe.title,
-    category: recipe.category || "Facile & rapide",
-    prepTime: recipe.prepTime,
-    cookTime: recipe.cookTime,
-    calories: recipe.calories,
-    highlights,
-    searchTokens,
-  };
-}).sort((a, b) => a.label.localeCompare(b.label, "fr"));
+const catalogSuggestions = getRecipeSuggestions();
 
 const catalogLookup = new Map(
   catalogSuggestions.map((suggestion) => [suggestion.label, suggestion])
@@ -585,15 +562,30 @@ function handleSuggestionFilterClick(event) {
 
 function filterSuggestions(filterText = "") {
   const normalizedFilter = filterText.trim().toLowerCase();
-  return getAllSuggestions().filter(({ category, searchTokens }) => {
-    const matchesText =
-      normalizedFilter.length === 0 ||
-      (searchTokens || "").includes(normalizedFilter);
+  const matchedRecipeIds =
+    normalizedFilter.length === 0
+      ? null
+      : new Set(filterRecipesByQuery(filterText).map((recipe) => recipe.id));
+
+  return getAllSuggestions().filter(({ category, searchTokens, id }) => {
+    let matchesText = true;
+    if (normalizedFilter.length > 0) {
+      if (id && matchedRecipeIds) {
+        matchesText = matchedRecipeIds.has(id);
+      } else {
+        matchesText = (searchTokens || "").includes(normalizedFilter);
+      }
+    }
+
+    if (!matchesText) {
+      return false;
+    }
+
     const normalizedCategory = category || CUSTOM_CATEGORY;
     const matchesCategory =
       activeSuggestionCategory === CATEGORY_ALL_FILTER ||
       normalizedCategory === activeSuggestionCategory;
-    return matchesText && matchesCategory;
+    return matchesCategory;
   });
 }
 
