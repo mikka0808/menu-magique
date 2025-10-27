@@ -144,12 +144,55 @@ function renderPlanner() {
   const mealTemplate = document.getElementById("meal-template");
   plannerEl.innerHTML = "";
 
+  const overviewContainer = document.createElement("section");
+  overviewContainer.className = "week-overview";
+  const overviewTrack = document.createElement("div");
+  overviewTrack.className = "week-overview-track";
+  overviewContainer.appendChild(overviewTrack);
+  plannerEl.appendChild(overviewContainer);
+
   days.forEach((day) => {
+    const summaryCard = document.createElement("button");
+    summaryCard.type = "button";
+    summaryCard.className = "overview-card btn-touch";
+    summaryCard.dataset.daySummary = day;
+
+    const dayLabel = document.createElement("span");
+    dayLabel.className = "overview-day";
+    dayLabel.textContent = day.slice(0, 3).toUpperCase();
+    summaryCard.appendChild(dayLabel);
+
+    const summaryMeals = document.createElement("div");
+    summaryMeals.className = "overview-meals";
+    summaryCard.appendChild(summaryMeals);
+
+    mealSlots.forEach((slot) => {
+      const summaryRow = document.createElement("p");
+      summaryRow.className = "overview-meal";
+
+      const label = document.createElement("span");
+      label.className = "overview-meal-label";
+      label.textContent = slot.label;
+      summaryRow.appendChild(label);
+
+      const value = document.createElement("span");
+      value.className = "overview-meal-value";
+      value.dataset.summarySlot = slot.key;
+      value.textContent = formatOverviewValue(planState[day][slot.key]);
+      summaryRow.appendChild(value);
+
+      summaryMeals.appendChild(summaryRow);
+    });
+
     const dayFragment = dayTemplate.content.cloneNode(true);
     const dayCard = dayFragment.querySelector(".day-card");
     const dayNameEl = dayFragment.querySelector('[data-slot="day-name"]');
     const mealsContainer = dayFragment.querySelector(".meals");
     dayNameEl.textContent = day;
+
+    const dayId = `day-${day.toLowerCase().replace(/\s+/g, "-")}`;
+    dayCard.id = dayId;
+    summaryCard.addEventListener("click", () => focusDayCard(dayId));
 
     mealSlots.forEach((slot) => {
       const mealFragment = mealTemplate.content.cloneNode(true);
@@ -189,8 +232,51 @@ function renderPlanner() {
     );
     clearDayButton.addEventListener("click", () => clearDay(day));
 
+    overviewTrack.appendChild(summaryCard);
+    refreshOverviewForDay(day);
+
     plannerEl.appendChild(dayFragment);
   });
+}
+
+function focusDayCard(dayId) {
+  const target = document.getElementById(dayId);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+  target.classList.add("day-card--highlighted");
+  window.setTimeout(() => {
+    target.classList.remove("day-card--highlighted");
+  }, 900);
+}
+
+function formatOverviewValue(value) {
+  const normalized = (value || "").trim();
+  return normalized.length > 0 ? normalized : "Ajouter";
+}
+
+function refreshOverviewForDay(day) {
+  const card = plannerEl.querySelector(
+    `.overview-card[data-day-summary="${day}"]`
+  );
+  if (!card) return;
+  mealSlots.forEach((slot) => {
+    const valueEl = card.querySelector(
+      `[data-summary-slot="${slot.key}"]`
+    );
+    if (!valueEl) return;
+    valueEl.textContent = formatOverviewValue(planState[day][slot.key]);
+  });
+  const hasContent = mealSlots.some(
+    (slot) => (planState[day][slot.key] || "").trim().length > 0
+  );
+  card.classList.toggle("is-empty", !hasContent);
+  const ariaLabel = `${day} – Midi: ${formatOverviewValue(
+    planState[day].lunch
+  )}, Soir: ${formatOverviewValue(planState[day].dinner)}`;
+  card.setAttribute("aria-label", ariaLabel);
+  card.title = `${day} – Midi: ${formatOverviewValue(
+    planState[day].lunch
+  )} • Soir: ${formatOverviewValue(planState[day].dinner)}`;
 }
 
 function getMealTextarea(day, slot) {
@@ -217,6 +303,7 @@ function syncMealCard(day, slot, { focus = false } = {}) {
   if (focus) {
     textarea.focus();
   }
+  refreshOverviewForDay(day);
 }
 
 function handleMealInput(event) {
@@ -224,6 +311,7 @@ function handleMealInput(event) {
   planState[day][slot] = event.target.value;
   updateMealCardState(event.target.closest(".meal-card"), event.target.value);
   savePlan();
+  refreshOverviewForDay(day);
 }
 
 function clearMeal(day, slot) {
