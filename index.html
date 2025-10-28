@@ -39,43 +39,6 @@
     <main>
       <section class="planner" id="planner" aria-live="polite"></section>
 
-      <section class="library">
-        <h2>Bibliothèque de recettes</h2>
-        <p class="section-description">
-          Ajoutez vos idées de repas pour les réutiliser facilement. Elles
-          s&apos;ajoutent aux suggestions déjà présentes dans l&apos;application.
-        </p>
-        <form id="addRecipeForm" autocomplete="off">
-          <label class="field-label" for="recipeInput">Nouvelle idée de repas</label>
-          <div class="field-row">
-            <input
-              id="recipeInput"
-              name="recipe"
-              type="text"
-              required
-              maxlength="80"
-              placeholder="Ex. Buddha bowl au saumon"
-            />
-            <button type="submit" class="primary-button btn-touch">
-              Ajouter
-            </button>
-          </div>
-          <label class="field-label optional" for="recipeCategory"
-            >Type de recette (optionnel)</label
-          >
-          <select
-            id="recipeCategory"
-            name="category"
-            class="select-field"
-            aria-label="Choisir un type de recette"
-          >
-            <option value="">Chargement des types...</option>
-          </select>
-        </form>
-
-        <div class="recipe-tags" id="recipeTags" aria-live="polite"></div>
-      </section>
-
       <section class="tips">
         <h2>Conseils d&apos;utilisation</h2>
         <ul>
