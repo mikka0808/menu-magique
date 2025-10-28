@@ -20,29 +20,21 @@ const MOVE_CANCEL_DISTANCE = 8;
 
 const STORAGE_KEYS = {
   plan: "menu-magique-plan",
-  recipes: "menu-magique-recipes",
 };
 
-const CUSTOM_CATEGORY = "Perso";
+const DEFAULT_CATEGORY = "Autres";
 const CATEGORY_ALL_FILTER = "Tous";
 
 const catalogSuggestions = getRecipeSuggestions();
-
-const catalogLookup = new Map(
-  catalogSuggestions.map((suggestion) => [suggestion.label, suggestion])
-);
 
 const plannerEl = document.getElementById("planner");
 const suggestionSheet = document.getElementById("suggestionSheet");
 const suggestionGrid = document.getElementById("suggestionGrid");
 const suggestionSearch = document.getElementById("suggestionSearch");
 const suggestionFilters = document.getElementById("suggestionFilters");
-const recipeCategorySelect = document.getElementById("recipeCategory");
 const toastEl = document.getElementById("toast");
-const recipeTags = document.getElementById("recipeTags");
 
 let planState = loadPlan();
-let customRecipes = loadRecipes();
 let activeSlot = null;
 let activeSuggestionCategory = CATEGORY_ALL_FILTER;
 let dragState = null;
@@ -66,32 +58,6 @@ function loadPlan() {
   } catch (error) {
     console.warn("Impossible de charger le plan enregistré", error);
     return createEmptyPlan();
-  }
-}
-
-function loadRecipes() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.recipes);
-    if (!stored) {
-      return [];
-    }
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter((item) => item && typeof item.label === "string")
-      .map((item) => ({
-        label: item.label,
-        category:
-          typeof item.category === "string" && item.category.trim()
-            ? item.category.trim()
-            : CUSTOM_CATEGORY,
-      }));
-  } catch (error) {
-    console.warn("Impossible de charger les recettes", error);
-    return [];
   }
 }
 
@@ -124,34 +90,8 @@ function savePlan() {
   }
 }
 
-function saveRecipes() {
-  try {
-    localStorage.setItem(STORAGE_KEYS.recipes, JSON.stringify(customRecipes));
-  } catch (error) {
-    console.warn("Sauvegarde des recettes impossible", error);
-  }
-}
-
 function getAllSuggestions() {
-  const merged = catalogSuggestions.map((suggestion) => ({ ...suggestion }));
-  customRecipes.forEach((recipe) => {
-    if (!merged.some((item) => item.label === recipe.label)) {
-      const category = recipe.category || CUSTOM_CATEGORY;
-      merged.push({
-        id: null,
-        label: recipe.label,
-        category,
-        prepTime: null,
-        cookTime: null,
-        calories: null,
-        highlights: [],
-        searchTokens: `${recipe.label} ${category}`.toLowerCase(),
-        isCustom: true,
-      });
-    }
-  });
-
-  return merged.sort((a, b) => a.label.localeCompare(b.label, "fr"));
+  return catalogSuggestions.map((suggestion) => ({ ...suggestion }));
 }
 
 function getAvailableCategories() {
@@ -161,12 +101,6 @@ function getAvailableCategories() {
       categories.add(item.category);
     }
   });
-  customRecipes.forEach((item) => {
-    if (item.category) {
-      categories.add(item.category);
-    }
-  });
-  categories.add(CUSTOM_CATEGORY);
 
   return Array.from(categories).sort((a, b) => a.localeCompare(b, "fr"));
 }
@@ -209,29 +143,6 @@ function updateActiveSuggestionFilter() {
       button.setAttribute("aria-selected", isActive ? "true" : "false");
       button.setAttribute("tabindex", isActive ? "0" : "-1");
     });
-}
-
-function populateCategorySelect() {
-  if (!recipeCategorySelect) return;
-  const categories = getAvailableCategories();
-  const previousValue = recipeCategorySelect.value;
-  recipeCategorySelect.innerHTML = "";
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Choisir un type (facultatif)";
-  recipeCategorySelect.appendChild(placeholder);
-
-  categories.forEach((category) => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    recipeCategorySelect.appendChild(option);
-  });
-
-  if (categories.includes(previousValue)) {
-    recipeCategorySelect.value = previousValue;
-  }
 }
 
 function renderPlanner() {
@@ -462,7 +373,7 @@ function renderSuggestionGrid(filterText = "") {
   suggestions.forEach((suggestion) => {
     const card = document.createElement("article");
     card.className = "suggestion-card";
-    card.dataset.category = suggestion.category || CUSTOM_CATEGORY;
+    card.dataset.category = suggestion.category || DEFAULT_CATEGORY;
     if (suggestion.id) {
       card.dataset.recipeId = suggestion.id;
     }
@@ -476,7 +387,7 @@ function renderSuggestionGrid(filterText = "") {
 
     const badge = document.createElement("span");
     badge.className = "suggestion-badge";
-    badge.textContent = suggestion.category || CUSTOM_CATEGORY;
+    badge.textContent = suggestion.category || DEFAULT_CATEGORY;
 
     header.appendChild(title);
     header.appendChild(badge);
@@ -533,11 +444,6 @@ function renderSuggestionGrid(filterText = "") {
       detailsLink.className = "suggestion-card-link";
       detailsLink.textContent = "Voir la fiche";
       actions.appendChild(detailsLink);
-    } else {
-      const note = document.createElement("span");
-      note.className = "suggestion-card-note";
-      note.textContent = "Idée personnalisée";
-      actions.appendChild(note);
     }
 
     card.appendChild(actions);
@@ -581,7 +487,7 @@ function filterSuggestions(filterText = "") {
       return false;
     }
 
-    const normalizedCategory = category || CUSTOM_CATEGORY;
+    const normalizedCategory = category || DEFAULT_CATEGORY;
     const matchesCategory =
       activeSuggestionCategory === CATEGORY_ALL_FILTER ||
       normalizedCategory === activeSuggestionCategory;
@@ -651,95 +557,6 @@ function showToast(message) {
   setTimeout(() => {
     toastEl.classList.remove("show");
   }, 2400);
-}
-
-function handleRecipeSubmit(event) {
-  event.preventDefault();
-  const input = event.target.elements.recipe;
-  const categoryField = event.target.elements.category;
-  const value = input.value.trim();
-  if (!value) return;
-
-  if (customRecipes.some((recipe) => recipe.label === value)) {
-    showToast("Cette idée est déjà enregistrée.");
-    input.value = "";
-    return;
-  }
-
-  const selectedCategory =
-    typeof categoryField?.value === "string"
-      ? categoryField.value.trim()
-      : "";
-
-  const category =
-    selectedCategory ||
-    catalogLookup.get(value)?.category ||
-    CUSTOM_CATEGORY;
-
-  customRecipes.push({ label: value, category });
-  saveRecipes();
-  renderRecipeTags();
-  populateCategorySelect();
-  if (!suggestionSheet.classList.contains("hidden")) {
-    renderSuggestionFilters();
-    updateActiveSuggestionFilter();
-    renderSuggestionGrid(suggestionSearch.value);
-  }
-  showToast("Idée ajoutée à la bibliothèque !");
-  input.value = "";
-  if (categoryField) {
-    categoryField.value = "";
-  }
-}
-
-function renderRecipeTags() {
-  recipeTags.innerHTML = "";
-  const suggestions = getAllSuggestions();
-  if (!suggestions.length) {
-    return;
-  }
-
-  const catalogOnly = suggestions.filter((item) => item.id);
-  const customOnly = suggestions.filter((item) => item.isCustom);
-
-  const selected = [];
-  const maxCatalog = Math.min(24, catalogOnly.length);
-  const maxCustom = Math.min(6, customOnly.length);
-
-  const pickRandomItems = (pool, count) => {
-    if (!count) return [];
-    const result = [];
-    const used = new Set();
-    while (result.length < count && used.size < pool.length) {
-      const index = Math.floor(Math.random() * pool.length);
-      if (used.has(index)) {
-        continue;
-      }
-      used.add(index);
-      result.push(pool[index]);
-    }
-    return result;
-  };
-
-  selected.push(...pickRandomItems(catalogOnly, maxCatalog));
-  selected.push(...pickRandomItems(customOnly, maxCustom));
-
-  selected.forEach((suggestion) => {
-    const elementTag = suggestion.id ? "a" : "span";
-    const tag = document.createElement(elementTag);
-    tag.className = "recipe-tag";
-    if (suggestion.id) {
-      tag.classList.add("recipe-tag--link");
-      tag.href = `recettes.html#${suggestion.id}`;
-    }
-    tag.textContent = suggestion.label;
-    if (suggestion.highlights?.length) {
-      tag.title = `Ingrédients clés : ${suggestion.highlights
-        .slice(0, 3)
-        .join(", ")}`;
-    }
-    recipeTags.appendChild(tag);
-  });
 }
 
 function registerDragAndDrop() {
@@ -934,10 +751,6 @@ function registerEvents() {
   document
     .getElementById("exportPlan")
     .addEventListener("click", exportWeek);
-  document
-    .getElementById("addRecipeForm")
-    .addEventListener("submit", handleRecipeSubmit);
-
   suggestionSheet.addEventListener("click", (event) => {
     if (event.target === suggestionSheet) {
       closeSuggestionSheet();
@@ -978,8 +791,6 @@ function registerEvents() {
 function init() {
   applyIOSBodyClasses();
   renderPlanner();
-  renderRecipeTags();
-  populateCategorySelect();
   registerEvents();
 }
 
